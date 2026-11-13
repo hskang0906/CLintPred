@@ -1,10 +1,17 @@
+# Direct dependencies of the current Python sources; not a validated lock file.
+# Preserve the existing Lightning version for legacy training hooks.
+torch>=1.13
 pytorch-lightning==1.8.4
 transformers
-datasets
-tqdm
+numpy
+pandas
 scikit-learn
-wandb
 easydict
-fastprogress
-einops
+
+# Training logs and experiment tracking
+tensorboard
+wandb
+
+# Plot generation and static image export
 plotly
+kaleido
