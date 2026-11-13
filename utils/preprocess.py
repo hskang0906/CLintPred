@@ -28,22 +28,25 @@ def load_protdata(file_path:str, extend_protType:bool = False):
 
 
 def norm_dataset(df_loadData:pd.DataFrame, feature_type:str = "default", scale = True, augmentation = False):
-    df_loadData = df_loadData[(df_loadData['Clint'] <= 500)]
+    # df_loadData = df_loadData[(df_loadData['Clint'] <= 500)]
     df_loadData['Clint'] = np.log1p(df_loadData['Clint'])
-    
-    ## -- Common setting preprecessing -- ##
-    df_loadData = df_loadData[(df_loadData['Fup'] >= 0.01) & (df_loadData['Fup'] <= 0.99)]
-    df_loadData = df_loadData[(df_loadData['logP'] >= -2.0) & (df_loadData['logP'] <= 6.0)]
 
-    df_loadData = df_loadData[(df_loadData['MW_rdkit'] < 1000.0)]
-    df_loadData = df_loadData[(df_loadData['HBA_rdkit'] <= 10.0)]
-    df_loadData = df_loadData[(df_loadData['HBD_rdkit'] <= 5.0)]
-    df_loadData = df_loadData.drop(df_loadData[df_loadData["logP"] == "None"].index).reset_index(drop=True)
+    if feature_type.lower() != "default":
+        ## -- Common setting preprecessing -- ##
+        df_loadData = df_loadData[(df_loadData['Fup'] >= 0.01) & (df_loadData['Fup'] <= 0.99)]
+        df_loadData = df_loadData[(df_loadData['logP'] >= -2.0) & (df_loadData['logP'] <= 6.0)]
+
+        df_loadData = df_loadData[(df_loadData['MW_rdkit'] < 1000.0)]
+        df_loadData = df_loadData[(df_loadData['HBA_rdkit'] <= 10.0)]
+        df_loadData = df_loadData[(df_loadData['HBD_rdkit'] <= 5.0)]
+        df_loadData = df_loadData.drop(df_loadData[df_loadData["logP"] == "None"].index).reset_index(drop=True)
+    
 
     if feature_type.lower() == "default":
         df_loadData = df_loadData[default_columns].dropna(axis=0).reset_index(drop=True)
 
     elif feature_type.lower() == "features":
+        
         # df_loadData = df_loadData[(df_loadData['Fup'] >= 0.01) & (df_loadData['Fup'] <= 0.99)]
         # df_loadData = df_loadData[(df_loadData['logP'] >= -2.0) & (df_loadData['logP'] <= 6.0)]
         # df_loadData = df_loadData.drop(df_loadData[df_loadData["logP"] == "None"].index).reset_index(drop=True)
@@ -53,8 +56,8 @@ def norm_dataset(df_loadData:pd.DataFrame, feature_type:str = "default", scale =
 
     elif feature_type.lower() == "features_mwlogp":
         # df_loadData = df_loadData[(df_loadData['Fup'] >= 0.01) & (df_loadData['Fup'] <= 0.99)]
-        # df_loadData = df_loadData[(df_loadData['logP_rdkit'] >= -2.0) & (df_loadData['logP_rdkit'] <= 6.0)]
-        # df_loadData = df_loadData.drop(df_loadData[df_loadData["logP_rdkit"] == "None"].index).reset_index(drop=True)
+        df_loadData = df_loadData[(df_loadData['logP_rdkit'] >= -2.0) & (df_loadData['logP_rdkit'] <= 6.0)]
+        df_loadData = df_loadData.drop(df_loadData[df_loadData["logP_rdkit"] == "None"].index).reset_index(drop=True)
         
         df_loadData = df_loadData[default_columns + features_mwlogp_columns].dropna(axis=0).reset_index(drop=True)
         
@@ -92,8 +95,10 @@ def norm_dataset(df_loadData:pd.DataFrame, feature_type:str = "default", scale =
         
     ## -- log scaled dataset augmentation--  ##
     df_sampledData = copy.deepcopy(df_loadData)
+    data_scaler = None
+    
     if augmentation is True:
-        df_augmentedData = df_loadData[(df_loadData['Clint'] >= 0.5)]
+        df_augmentedData = df_loadData[(df_loadData['Clint'] >= 4.5)]
         df_loadData = pd.concat([df_loadData, df_augmentedData], axis=0).reset_index(drop = True)
     
     if scale:
@@ -132,7 +137,7 @@ def get_affinitydata(df_loadData:pd.DataFrame, train_affinity:pd.DataFrame, augm
     
     ## -- log scaled dataset augmentation--  ##
     if augmentation is True:
-        df_augmentedData = df_loadData[(df_loadData['Clint'] >= 0.5)]
+        df_augmentedData = df_loadData[(df_loadData['Clint'] >= 4.5)]
         df_augmentedFeature = df_affinityData[df_affinityData["SMILES"].isin(list(df_augmentedData["SMILES"]))]
         df_affinityData = pd.concat([df_affinityData, df_augmentedFeature], axis=0).reset_index(drop = True)
         
@@ -143,7 +148,7 @@ def get_rdkitlabel(df_loadData:pd.DataFrame, augmentation = False):
     df_rdkitLabel = rdkit_rangeLabel(df_loadData)
     
     if augmentation is True:
-        df_augmentedData = df_loadData[(df_loadData['Clint'] >= 0.5)]
+        df_augmentedData = df_loadData[(df_loadData['Clint'] >= 4.5)]
         df_augmentedrdkitLabel = df_rdkitLabel[df_rdkitLabel["SMILES"].isin(list(df_augmentedData["SMILES"]))]
         df_rdkitLabel = pd.concat([df_rdkitLabel, df_augmentedrdkitLabel], axis=0).reset_index(drop = True)
         
@@ -203,7 +208,7 @@ def load_chemdata(df_loadData:pd.DataFrame, train_affinity:pd.DataFrame, feature
 
     ## -- log scaled dataset augmentation--  ##
     if augmentation is True:
-        df_augmentedData = df_loadData[(df_loadData['Clint'] >= 0.5)]
+        df_augmentedData = df_loadData[(df_loadData['Clint'] >= 4.5)]
         df_loadData = pd.concat([df_loadData, df_augmentedData], axis=0).reset_index(drop = True)
         
         df_augmentedrdkitLabel = df_rdkitLabel[df_rdkitLabel["SMILES"].isin(list(df_augmentedData["SMILES"]))]

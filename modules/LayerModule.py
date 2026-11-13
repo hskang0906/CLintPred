@@ -41,8 +41,6 @@ def deleteEncodingLayers(model, num_layers_to_keep):  # must pass in the full be
 
     return copyOfModel
 
-    
-
 def make_sequential(input_dim:int, output_dim:int, act_function:str = "relu", dropout:float = 0.1, shift:float = 0.0):
     act_func = get_actfunction(act_function.lower())
     sequencial = nn.Sequential(nn.Linear(input_dim, output_dim),
@@ -50,7 +48,6 @@ def make_sequential(input_dim:int, output_dim:int, act_function:str = "relu", dr
                                 nn.Dropout(dropout))
 
     return sequencial
-
 
 def make_encoder(input_dim:int, num_heads:int, num_layers:int, act_function:str = "relu", dropout:float = 0.1):
     act_func = get_actfunction(act_function.lower())

@@ -6,7 +6,7 @@
 	
     "num_seed" : [241, 342, 510],
 	
-	"data_folder": "./dataset/fin/",
+	"data_folder": "./dataset/",
 	"affinity_folder": "./dataset/affinity_fin/",
 
 	"train_file" : "train.csv",
@@ -17,7 +17,7 @@
 	"train_dataType": "newdata_nonvivo_sort",
 	"model_type": "mlp",
 	
-	"chem_max" : 512,
+	"chem_max" : 510,
 	"prot_max" : 545,
 
     "extend_protType" : true,

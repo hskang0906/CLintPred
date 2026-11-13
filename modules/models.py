@@ -1,12 +1,8 @@
-import torch
 import torch.nn as nn
-
 import pytorch_lightning as pl
 
-from utils.utils import *
-from transformers import AutoConfig, RobertaModel, BertModel
-from modules.LayerModule import get_actfunction
-
+from clearance_ft.utils.utils import *
+from clearance_ft.modules.LayerModule import get_actfunction
 
 activation = {}
 

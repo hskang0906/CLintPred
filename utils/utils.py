@@ -4,7 +4,7 @@ import pandas as pd
 from itertools import product
 from easydict import EasyDict
 
-from utils.plot import draw_boundaryplot
+from clearance_ft.utils.plot import draw_boundaryplot
 
 
 class DictX(dict):

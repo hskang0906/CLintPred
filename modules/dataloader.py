@@ -6,14 +6,11 @@ from typing import Optional
 from itertools import cycle, product
 
 import torch
-from torch.utils.data import Dataset, DataLoader, TensorDataset
+from torch.utils.data import Dataset, DataLoader
 
 import pytorch_lightning as pl
 from pytorch_lightning.utilities.types import EVAL_DATALOADERS
-from transformers import AutoTokenizer
 
-from utils.normalize_process import normalization, inverse_scaling
-from sklearn.model_selection import train_test_split
 from sklearn.model_selection import KFold
 
 from dataclasses import dataclass
@@ -24,7 +21,7 @@ class BiomakerDataset(Dataset):
         self.pair_ids, self.pair_mask = self.make_pairset(chem_obj, prot_obj)
 
     def make_pairset(self, chem_obj, prot_obj):
-        chem_ids = list(range(0, len(chem_obj["input_ids"])))
+        chem_ids = list(range(len(chem_obj["input_ids"])))
         marked_chem_obj = list(zip(chem_ids, chem_obj["input_ids"]))
 
         pair_ids = list(product(*[marked_chem_obj, prot_obj["input_ids"]]))
@@ -218,23 +215,18 @@ class clearanceKfoldDatamodule(pl.LightningDataModule):
         if self.df_trainfeatures is not None:
             train_features = torch.from_numpy(np.array(self.df_trainfeatures)) 
             self.trainset = clearanceDataset(train_encoding, train_label, train_features)
-            # self.trainset = TensorDataset(train_encoding['input_ids'], train_encoding['attention_mask'], train_label, train_features)
         else:
             self.trainset = clearanceDataset(train_encoding, train_label)
-            # self.trainset = TensorDataset(train_encoding['input_ids'], train_encoding['attention_mask'], train_label)
             
         if self.df_testfeatures is not None:
             test_features = torch.from_numpy(np.array(self.df_testfeatures))
             self.testset = clearanceDataset(test_encoding, test_label, test_features)
-            # self.testset = TensorDataset(test_encoding['input_ids'], test_encoding['attention_mask'], test_label, test_features)
         else:
             self.testset = clearanceDataset(test_encoding, test_label)
-            # self.testset = TensorDataset(test_encoding['input_ids'], test_encoding['attention_mask'], test_label)
             
         self.splits = list(KFold(n_splits=self.kfold, shuffle=True).split(self.trainset))
 
             
-        
     def train_dataloader(self, fold_index):
         train_idx, val_idx = self.splits[fold_index]
         train_dataset = torch.utils.data.Subset(self.trainset, train_idx)

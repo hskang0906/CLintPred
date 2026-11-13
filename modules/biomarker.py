@@ -1,12 +1,16 @@
 from typing import Any
 
+import os
+import pandas as pd
+import numpy as np
+
 import torch
 import torch.nn as nn
-
-from modules.LayerModule import deleteEncodingLayers
-
 import pytorch_lightning as pl
 from transformers import AutoConfig, RobertaModel, BertModel
+
+from clearance_ft.modules.dataloader import BiomakerDataModule
+from clearance_ft.modules.LayerModule import deleteEncodingLayers
 
 
 class BiomarkerModel(pl.LightningModule):
@@ -119,4 +123,53 @@ class BindingAffinityModel(pl.LightningModule):
     def predict_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> Any:
         return {"ids": batch[0],  "outputs": self(batch[1], batch[2])}
     
+
+
+def predict_Biomarker(model_name, chem_tokenizer, prot_tokenizer, df_chem, df_prot, pred_file):
+    checkpoint_name = str(model_name).lower()
+
+    ## 1. Model 불러오기
+    ckpt_file = os.path.join("./checkpoint", f"{checkpoint_name}.ckpt")
+    if checkpoint_name == "regression_bindingDB":
+        model = BindingAffinityModel.load_from_checkpoint(ckpt_file)
+    else:
+        model = BiomarkerModel.load_from_checkpoint(ckpt_file)
+    
+    train_obj = chem_tokenizer(np.array(df_chem["SMILES"]).tolist(), padding='max_length', 
+                            max_length=config.chem_max, truncation=True, return_tensors="pt")
+    prot_obj = prot_tokenizer(np.array(df_chem["aas"]).tolist(), padding='max_length', 
+                            max_length=config.prot_max, truncation=True, return_tensors="pt")
+    
+    affinity_dm = BiomakerDataModule(train_obj, prot_obj, config)
+
+    ## 2. biomarker Trainer 설정
+    trainer = pl.Trainer(accelerator='gpu',
+                        strategy='dp', 
+                        devices=config.gpus)
+
+    pred_train = trainer.predict(model, datamodule=affinity_dm)
+
+    ## 3. 예측 결과 Output-Amino Acid Binding 결합 결과 저장
+    affinity_columns = pd.DataFrame(list(df_prot["name"])).reset_index(drop=True)
+
+    ids = np.array(torch.cat([output['ids'] for output in pred_train], dim=0)).tolist()
+    outputs = np.array(torch.cat([output['outputs'] for output in pred_train], dim=0)).tolist()
+    pred_list = {"ids": ids, "outputs":outputs}
+
+    start_idx = 0
+    for idx in range(1, len(pred_list['ids'])):
+        if pred_list["ids"][idx-1] != pred_list["ids"][idx]:
+            affinity_dataset = [affinities for affinities in pred_list["outputs"][start_idx : idx]] 
+            affinity_columns.loc[len(affinity_columns)] = affinity_dataset
+
+            start_idx = idx
+    
+    affinity_dataset = [affinities for affinities in pred_list["outputs"][start_idx :]] 
+    affinity_columns.loc[len(affinity_columns)] = affinity_dataset
+
+    ## 4. 예측 결과 저장
+    affinities = pd.concat([df_chem["SMILES"], affinity_columns], axis=1)
+    affinities.to_csv(pred_file, index=False)
+
+    return affinities
 

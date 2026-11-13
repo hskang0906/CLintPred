@@ -2,27 +2,31 @@ import copy
 import torch
 import torch.nn as nn
 
-from transformers import RobertaModel, BertModel, BertConfig
+from transformers import AutoConfig, RobertaModel, BertModel, BertConfig
 import pytorch_lightning as pl
 
-from modules.models import transformerDecoder, transformerEncoder
 from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
-from utils.emetric import get_cindex, get_rm2
 
-from modules.LayerModule import make_sequential
-from utils.preprocess import inverse_data
+from clearance_ft.modules.models import transformerDecoder, transformerEncoder
+from clearance_ft.utils.emetric import get_cindex, get_rm2
+
+from clearance_ft.modules.LayerModule import make_sequential
+from clearance_ft.utils.preprocess import inverse_data
 
 
 class clearanceMLPModel(pl.LightningModule):
     def __init__(self, lr, dropout, model_name, feature_length,
-                 act_func, df_testColData=None):
+                 act_func, df_testColData=None, initialize_pretrained=True):
         super().__init__()
         ## -- learning rate setting -- ##
         self.lr = lr
         self.df_testColData = df_testColData
 
         ## -- SMILES Attention model -- ##
-        self.model = RobertaModel.from_pretrained(model_name)
+        if initialize_pretrained:
+            self.model = RobertaModel.from_pretrained(model_name)
+        else:
+            self.model = RobertaModel(AutoConfig.from_pretrained(model_name))
         
         ## -- SMILES Feature Attention model -- ##
         if feature_length != 0:
